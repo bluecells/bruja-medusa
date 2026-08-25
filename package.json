@@ -13,6 +13,7 @@
     "@medusajs/cli": "2.13.6",
     "@medusajs/framework": "2.13.6",
     "@medusajs/medusa": "2.13.6",
+    "@webbers/cloudflare-r2-medusa": "^1.0.0",
     "awilix": "^8.0.1",
     "pg": "^8.13.0"
   },
