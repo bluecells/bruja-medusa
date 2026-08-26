@@ -27,24 +27,19 @@ module.exports = defineConfig({
   },
   modules: [
   { key: "api_key", resolve: "@medusajs/medusa/api-key" },
-  {
-    resolve: "@medusajs/medusa/file",
-    options: {
-      providers: [
-        {
-          resolve: "@webbers/cloudflare-r2-medusa/modules/cloudflare-r2",
-          id: "r2",
-          options: {
-            file_url: process.env.S3_FILE_URL,
-            access_key_id: process.env.S3_ACCESS_KEY_ID,
-            secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
-            region: "auto",
-            bucket: process.env.S3_BUCKET,
-            endpoint: process.env.S3_ENDPOINT,
-          },
-        },
-      ],
+    { resolve: 
+      "@medusajs/medusa/file", 
+         options: { 
+           providers: [ 
+             { resolve: "@medusajs/medusa/file-local", 
+              id: "local", 
+              options: { 
+                upload_dir: "/app/uploads", 
+                backend_url: `${process.env.BACKEND_URL}/static`, 
+              }, 
+             }, 
+           ], 
+         }, 
     },
-  },
-],
+  ],
 })
