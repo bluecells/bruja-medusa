@@ -15,3 +15,7 @@ Thumbs.db
 .idea/
 .vscode/
 coverage/
+
+# WooCommerce -> Medusa migration working files (large DB dumps, customer/order
+# data) - kept local only, never pushed to the remote.
+import/
