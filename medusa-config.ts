@@ -27,7 +27,7 @@ module.exports = defineConfig({
   },
   modules: [
   { key: "api_key", resolve: "@medusajs/medusa/api-key" },
-{
+  {
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [
@@ -46,7 +46,7 @@ module.exports = defineConfig({
         ],
       },
     },
-
+    {resolve: "./src/modules/bundled-product",},
   ],
 })
 
