@@ -34,8 +34,8 @@ module.exports = defineConfig({
              { resolve: "@medusajs/medusa/file-local", 
               id: "local", 
               options: { 
-                upload_dir: "static", 
-                backend_url: `${process.env.BACKEND_URL}/static`, 
+                upload_dir: "/app/uploads", 
+                backend_url: `${process.env.BACKEND_URL}/uploads`, 
               }, 
              }, 
            ], 
@@ -43,3 +43,4 @@ module.exports = defineConfig({
     },
   ],
 })
+
