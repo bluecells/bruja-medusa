@@ -4,7 +4,7 @@ set -e
 cd /app/.medusa/server
 
 echo "[start] Running database migrations..."
-npx medusa db:migrate || {
+npx medusa db:migrate --execute-all-links || {
   echo "[start] db:migrate failed" >&2
   exit 1
 }
