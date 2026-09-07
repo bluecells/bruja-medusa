@@ -61,6 +61,45 @@ module.exports = defineConfig({
         ],
       },
     },
+    {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          // Keeps the admin activity "feed" (e.g. export/import progress) working -
+          // this is the module's default provider, restated because declaring the
+          // notification module here replaces its defaults entirely.
+          {
+            resolve: "@medusajs/medusa/notification-local",
+            id: "local",
+            options: {
+              name: "Local Notification Provider",
+              channels: ["feed"],
+            },
+          },
+          // Sends real emails (e.g. the order-transfer-requested confirmation) via
+          // any SMTP account - Resend, SendGrid, Mailgun, SES, Gmail, etc.
+          {
+            resolve: "./src/modules/email-notifications",
+            id: "email-notifications",
+            options: {
+              channels: ["email"],
+              host: process.env.SMTP_HOST,
+              port: process.env.SMTP_PORT
+                ? Number(process.env.SMTP_PORT)
+                : undefined,
+              secure: process.env.SMTP_SECURE === "true",
+              from: process.env.SMTP_FROM,
+              auth: process.env.SMTP_USER
+                ? {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASSWORD,
+                  }
+                : undefined,
+            },
+          },
+        ],
+      },
+    },
   ],
 })
 
