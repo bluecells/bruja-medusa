@@ -9,6 +9,8 @@ import type {
 } from "@medusajs/framework/types"
 import nodemailer, { Transporter } from "nodemailer"
 import { orderTransferRequestedEmail } from "./templates/order-transfer-requested"
+import { passwordResetEmail } from "./templates/password-reset"
+import { orderPlacedEmail } from "./templates/order-placed"
 
 type InjectedDependencies = {
   logger: Logger
@@ -34,6 +36,8 @@ type EmailTemplateFn = (data: Record<string, unknown>) => {
 // notificationModuleService.createNotifications(...).
 const templates: Record<string, EmailTemplateFn> = {
   "order-transfer-requested": orderTransferRequestedEmail,
+  "password-reset": passwordResetEmail,
+  "order-placed": orderPlacedEmail,
 }
 
 /**
