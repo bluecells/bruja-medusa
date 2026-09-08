@@ -126,17 +126,33 @@ export const convertGuestToCustomerWorkflowId = "convert-guest-to-customer"
 export const convertGuestToCustomerWorkflow = createWorkflow(
   convertGuestToCustomerWorkflowId,
   (input: ConvertGuestToCustomerWorkflowInput) => {
-    const guestCustomer = findGuestCustomerByEmailStep(input.customerData.email)
+    // Same normalization the storefront applies before ever calling this
+    // route (see bruja/src/lib/stores/customer.ts's normalizeEmail) —
+    // duplicated here rather than trusted from the caller: Medusa's auth
+    // module (provider_identity.entity_id, node_modules/@medusajs/auth/
+    // dist/models/provider-identity.js) never case-folds emails, so an
+    // unnormalized lookup below could miss the very guest Customer this
+    // workflow exists to find (e.g. guest checkout stored
+    // "jean@example.com" via validateEmail()'s lowercasing, but this route
+    // got called with "Jean@Example.com").
+    const customerData = transform({ input }, ({ input }) => ({
+      ...input.customerData,
+      email: input.customerData.email.trim().toLowerCase(),
+    }))
+
+    const guestCustomer = findGuestCustomerByEmailStep(
+      transform({ customerData }, ({ customerData }) => customerData.email),
+    )
 
     const hasGuestCustomer = transform({ guestCustomer }, ({ guestCustomer }) => !!guestCustomer)
 
     const promoted = when("promote-guest-customer", { hasGuestCustomer }, ({ hasGuestCustomer }) => hasGuestCustomer).then(
       () => {
-        const promoteInput = transform({ input, guestCustomer }, ({ input, guestCustomer }) => ({
+        const promoteInput = transform({ customerData, guestCustomer }, ({ customerData, guestCustomer }) => ({
           customerId: guestCustomer!.id,
-          first_name: input.customerData.first_name,
-          last_name: input.customerData.last_name,
-          phone: input.customerData.phone,
+          first_name: customerData.first_name,
+          last_name: customerData.last_name,
+          phone: customerData.phone,
         }))
         const customer = promoteGuestCustomerStep(promoteInput)
 
@@ -158,7 +174,7 @@ export const convertGuestToCustomerWorkflow = createWorkflow(
       return createCustomerAccountWorkflow.runAsStep({
         input: {
           authIdentityId: input.authIdentityId,
-          customerData: input.customerData,
+          customerData,
         },
       })
     })
