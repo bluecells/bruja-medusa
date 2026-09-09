@@ -77,24 +77,16 @@ module.exports = defineConfig({
             },
           },
           // Sends real emails (e.g. the order-transfer-requested confirmation) via
-          // any SMTP account - Resend, SendGrid, Mailgun, SES, Gmail, etc.
+          // the Resend HTTP API. Not SMTP: Railway blocks outbound SMTP ports
+          // (465/587), confirmed by testing from inside the deployed container -
+          // the HTTP API only needs port 443, which works.
           {
             resolve: "./src/modules/email-notifications",
             id: "email-notifications",
             options: {
               channels: ["email"],
-              host: process.env.SMTP_HOST,
-              port: process.env.SMTP_PORT
-                ? Number(process.env.SMTP_PORT)
-                : undefined,
-              secure: process.env.SMTP_SECURE === "true",
-              from: process.env.SMTP_FROM,
-              auth: process.env.SMTP_USER
-                ? {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASSWORD,
-                  }
-                : undefined,
+              apiKey: process.env.RESEND_API_KEY,
+              from: process.env.RESEND_FROM,
             },
           },
         ],

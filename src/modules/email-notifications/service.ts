@@ -7,7 +7,6 @@ import type {
   ProviderSendNotificationDTO,
   ProviderSendNotificationResultsDTO,
 } from "@medusajs/framework/types"
-import nodemailer, { Transporter } from "nodemailer"
 import { orderTransferRequestedEmail } from "./templates/order-transfer-requested"
 import { passwordResetEmail } from "./templates/password-reset"
 import { orderPlacedEmail } from "./templates/order-placed"
@@ -17,14 +16,8 @@ type InjectedDependencies = {
 }
 
 export type EmailNotificationProviderOptions = {
-  host: string
-  port?: number
-  secure?: boolean
+  apiKey: string
   from: string
-  auth?: {
-    user: string
-    pass: string
-  }
 }
 
 type EmailTemplateFn = (data: Record<string, unknown>) => {
@@ -41,16 +34,17 @@ const templates: Record<string, EmailTemplateFn> = {
 }
 
 /**
- * Generic SMTP notification provider for the "email" channel, used since the
- * default "local" provider only supports the "feed" channel (it just logs).
- * Works with any SMTP account: Resend, SendGrid, Mailgun, Amazon SES, Gmail, etc.
+ * Sends email via the Resend HTTP API (not SMTP). Railway blocks outbound
+ * SMTP ports (465/587): confirmed by testing from inside the deployed
+ * container, where a raw TCP connect to smtp.resend.com hangs until timeout
+ * while HTTPS connects instantly. The HTTP API only needs port 443, so it
+ * works from Railway - SMTP silently never will.
  */
 class EmailNotificationProviderService extends AbstractNotificationProviderService {
   static identifier = "email-notifications"
 
   protected logger_: Logger
   protected options_: EmailNotificationProviderOptions
-  protected transporter_: Transporter
 
   constructor(
     { logger }: InjectedDependencies,
@@ -60,19 +54,13 @@ class EmailNotificationProviderService extends AbstractNotificationProviderServi
 
     this.logger_ = logger
     this.options_ = options
-    this.transporter_ = nodemailer.createTransport({
-      host: options.host,
-      port: options.port ?? 587,
-      secure: options.secure ?? false,
-      auth: options.auth,
-    })
   }
 
   static validateOptions(options: Record<string, unknown>) {
-    if (!options.host) {
+    if (!options.apiKey) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "`host` is required in the email-notifications provider's options."
+        "`apiKey` is required in the email-notifications provider's options."
       )
     }
     if (!options.from) {
@@ -97,14 +85,31 @@ class EmailNotificationProviderService extends AbstractNotificationProviderServi
 
     const { subject, html } = templateFn(notification.data ?? {})
 
-    await this.transporter_.sendMail({
-      from: this.options_.from,
-      to: notification.to,
-      subject,
-      html,
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.options_.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: this.options_.from,
+        to: notification.to,
+        subject,
+        html,
+      }),
     })
 
-    return {}
+    if (!response.ok) {
+      const body = await response.text().catch(() => "")
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        `Resend API responded with ${response.status}: ${body}`
+      )
+    }
+
+    const result = (await response.json()) as { id?: string }
+
+    return { id: result.id }
   }
 }
 
