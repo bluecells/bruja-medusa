@@ -6,7 +6,8 @@
   "scripts": {
     "build": "medusa build",
     "start": "medusa start",
-    "dev": "medusa develop"
+    "dev": "medusa develop",
+    "seo:dashboard:medusa": "node /Users/bluecells/Websites/medusa-seo-dashboard-cli/bin/cli.mjs"
   },
   "dependencies": {
     "@medusajs/admin-sdk": "2.20.1",
